@@ -34,10 +34,13 @@ artifacts/
       index.ts         # Entrypoint: PORT, graceful shutdown, uncaughtException
       lib/
         logger.ts      # Singleton pino logger
+        stats.ts       # Request counter + getStats() — uptime, req/s, memory, load
       routes/
         index.ts       # Mounts all sub-routers
         health.ts      # GET /api/healthz
+        stats.ts       # GET /api/stats
         youtube.ts     # GET /api/info  /api/video  /api/audio  + shutdown()
+        dashboard.ts   # GET / — live HTML dashboard
 lib/                   # Shared TypeScript libraries (workspace packages)
 scripts/               # Utility scripts
 guide.md               # ← this file
@@ -75,10 +78,43 @@ Streaming endpoints (`/api/video`, `/api/audio`) return binary data on success; 
 
 ---
 
+### `GET /`
+
+Live HTML dashboard — auto-refreshes every second. Shows:
+- Current time in the visitor's local timezone
+- Server uptime, requests/second (10 s window), total requests
+- Heap / RSS memory, load average, CPU count
+- Node.js version, platform, environment
+- Clickable links to all API endpoints
+
+---
+
 ### `GET /api/healthz`
 
 ```json
 { "status": "ok" }
+```
+
+---
+
+### `GET /api/stats`
+
+Live server metrics. No params.
+
+```json
+{
+  "uptime": 120,
+  "uptimeHuman": "2m 0s",
+  "totalRequests": 42,
+  "requestsPerSecond": 0.5,
+  "nodeVersion": "v24.13.0",
+  "platform": "linux",
+  "arch": "x64",
+  "env": "production",
+  "memoryMB": { "rss": 98, "heapUsed": 15, "heapTotal": 22 },
+  "cpus": 4,
+  "loadAvg": [0.78, 0.34, 0.14]
+}
 ```
 
 ---
@@ -202,7 +238,16 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Audio merged into every MP4 via ffmpeg
 - Download lock map prevents duplicate processes
 
-### 2026-06-22 — Render.com deployment (current)
+### 2026-06-22 — Dashboard + stats (current)
+- `GET /` — live HTML dashboard: user timezone clock, uptime, req/s, memory, load, env, API links
+- `GET /api/stats` — JSON metrics endpoint (uptime, req/s 10 s window, heap/RSS, load avg, CPUs)
+- `src/lib/stats.ts` — singleton request counter with 60 s sliding window; `recordRequest()` + `getStats()`
+- `src/routes/dashboard.ts` — self-contained HTML served inline from Express
+- `src/routes/stats.ts` — thin wrapper around `getStats()`
+- `recordRequest()` middleware added to `app.ts` before all routes
+- Tested: `GET /api/info?url=https://youtu.be/vBynw9Isr28` returns 8 qualities (144p–2160p) + audio URL
+
+### 2026-06-22 — Render.com deployment
 - Added `render.yaml` blueprint — one-click deploy via New → Blueprint
 - Added `.node-version` — pins Node 24 for Render
 - Root `package.json` `build` script is the full self-contained pipeline: `pip install -U yt-dlp` → `npm install -g pnpm@latest` → `pnpm install` → esbuild compile

@@ -7,7 +7,9 @@ import express, {
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import dashboardRouter from "./routes/dashboard";
 import { logger } from "./lib/logger";
+import { recordRequest } from "./lib/stats";
 
 const app: Express = express();
 
@@ -33,6 +35,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use((_req, _res, next) => { recordRequest(); next(); });
+
+app.use("/", dashboardRouter);
 app.use("/api", router);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
