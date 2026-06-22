@@ -3,27 +3,67 @@ import { spawn } from "child_process";
 
 const router: IRouter = Router();
 
-const YT_DLP = "/home/runner/workspace/.pythonlibs/bin/yt-dlp";
+const YT_DLP =
+  process.env["YT_DLP_PATH"] ||
+  "/home/runner/workspace/.pythonlibs/bin/yt-dlp";
 
 function youtubeUrl(id: string) {
   return `https://www.youtube.com/watch?v=${id}`;
 }
 
-function buildProxyUrl(req: Request, id: string, fmtid: string) {
+function buildBaseUrl(req: Request) {
   const host =
     req.headers["x-forwarded-host"] ||
     req.headers["host"] ||
     "localhost";
   const proto =
-    req.headers["x-forwarded-proto"] || req.protocol || "https";
-  return `${proto}://${host}/api/stream?id=${encodeURIComponent(id)}&fmtid=${encodeURIComponent(fmtid)}`;
+    (req.headers["x-forwarded-proto"] as string | undefined) ||
+    req.protocol ||
+    "https";
+  return `${proto}://${host}`;
+}
+
+function streamProc(
+  args: string[],
+  req: Request,
+  res: Response,
+  contentType: string,
+  filename: string,
+) {
+  const proc = spawn(YT_DLP, args);
+
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+
+  proc.stdout.pipe(res);
+
+  proc.stderr.on("data", (chunk: Buffer) => {
+    req.log.warn({ stderr: chunk.toString().trim() }, "yt-dlp stderr");
+  });
+
+  proc.on("error", (err) => {
+    req.log.error({ err }, "yt-dlp process error");
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Stream process failed" });
+    } else {
+      res.destroy();
+    }
+  });
+
+  proc.on("close", (code) => {
+    if (code !== 0) {
+      req.log.error({ code }, "yt-dlp exited non-zero");
+    }
+  });
+
+  req.on("close", () => proc.kill("SIGTERM"));
 }
 
 /**
  * GET /api/info?url=<youtube_url>
  *
- * Returns video title, all video qualities, and a best-audio entry.
- * Each format URL points back to this server's /api/stream endpoint.
+ * Returns title, one MP4 per resolution (deduplicated), and best audio.
+ * All URLs point to /api/video or /api/audio — no YouTube CDN URLs exposed.
  */
 router.get("/info", async (req: Request, res: Response) => {
   const { url } = req.query;
@@ -36,33 +76,28 @@ router.get("/info", async (req: Request, res: Response) => {
   let raw = "";
   let errOutput = "";
 
-  await new Promise<void>((resolve, reject) => {
+  const ok = await new Promise<boolean>((resolve) => {
     const proc = spawn(YT_DLP, [
       "--dump-json",
       "--skip-download",
       "--no-playlist",
       url,
     ]);
-
     proc.stdout.on("data", (chunk: Buffer) => {
       raw += chunk.toString();
     });
     proc.stderr.on("data", (chunk: Buffer) => {
       errOutput += chunk.toString();
     });
-    proc.on("close", (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`yt-dlp exited ${code}: ${errOutput}`));
-    });
-    proc.on("error", reject);
-  }).catch((err: Error) => {
-    req.log.error({ err }, "yt-dlp info failed");
-    res
-      .status(502)
-      .json({ error: "Failed to fetch video info", detail: err.message });
+    proc.on("close", (code) => resolve(code === 0));
+    proc.on("error", () => resolve(false));
   });
 
-  if (res.headersSent) return;
+  if (!ok) {
+    req.log.error({ errOutput }, "yt-dlp info failed");
+    res.status(502).json({ error: "Failed to fetch video info", detail: errOutput.slice(0, 300) });
+    return;
+  }
 
   let info: Record<string, unknown>;
   try {
@@ -75,122 +110,102 @@ router.get("/info", async (req: Request, res: Response) => {
   const id = info["id"] as string;
   const title = info["title"] as string;
   const formats = (info["formats"] as Record<string, unknown>[]) ?? [];
+  const base = buildBaseUrl(req);
 
-  const qualities: {
-    quality: string;
-    format: string;
-    width: number | null;
-    height: number | null;
-    fps: number | null;
-    fmtid: string;
-    url: string;
-  }[] = [];
-
-  let audioFmt: Record<string, unknown> | null = null;
+  const seenHeights = new Set<number>();
+  const qualities: { quality: string; url: string }[] = [];
+  let audioFound = false;
+  let audioExt = "m4a";
 
   for (const f of formats) {
+    const ext = f["ext"] as string;
     const vcodec = f["vcodec"] as string | undefined;
     const acodec = f["acodec"] as string | undefined;
-    const fmtid = f["format_id"] as string;
-    const ext = f["ext"] as string;
-    const height = (f["height"] as number | null) ?? null;
-    const width = (f["width"] as number | null) ?? null;
-    const fps = (f["fps"] as number | null) ?? null;
-    const formatNote = f["format_note"] as string | undefined;
+    const height = f["height"] as number | null | undefined;
 
-    const isVideoOnly = vcodec && vcodec !== "none";
     const isAudioOnly = vcodec === "none" && acodec && acodec !== "none";
+    const isVideo = vcodec && vcodec !== "none" && ext === "mp4" && height;
 
-    if (audioFmt === null && isAudioOnly) {
-      audioFmt = f;
+    if (!audioFound && isAudioOnly) {
+      audioFound = true;
+      audioExt = ext;
     }
 
-    if (isVideoOnly) {
-      const quality =
-        formatNote ||
-        (height ? `${height}p` : "Unknown");
-
+    if (isVideo && height && !seenHeights.has(height)) {
+      seenHeights.add(height);
+      const quality = `${height}p`;
       qualities.push({
         quality,
-        format: ext,
-        width,
-        height,
-        fps,
-        fmtid,
-        url: buildProxyUrl(req, id, fmtid),
+        url: `${base}/api/video?id=${encodeURIComponent(id)}&quality=${encodeURIComponent(quality)}`,
       });
     }
   }
 
-  const audio =
-    audioFmt !== null
-      ? {
-          format: audioFmt["ext"] as string,
-          fmtid: audioFmt["format_id"] as string,
-          url: buildProxyUrl(req, id, audioFmt["format_id"] as string),
-        }
-      : null;
+  const audio = audioFound
+    ? {
+        format: audioExt,
+        url: `${base}/api/audio?id=${encodeURIComponent(id)}`,
+      }
+    : null;
 
   res.json({ id, title, qualities, audio });
 });
 
 /**
- * GET /api/stream?id=<video_id>&fmtid=<format_id>
+ * GET /api/video?id=<video_id>&quality=<height>p
  *
- * Streams the requested format directly from YouTube via yt-dlp stdout.
- * The client bears no knowledge of Google's short-lived CDN URLs.
+ * Streams the best MP4 at the requested height inline.
+ * yt-dlp resolves the format at request time — no stale URLs.
  */
-router.get("/stream", (req: Request, res: Response) => {
-  const { id, fmtid } = req.query;
+router.get("/video", (req: Request, res: Response) => {
+  const { id, quality } = req.query;
 
   if (!id || typeof id !== "string") {
     res.status(400).json({ error: "Missing required query param: id" });
     return;
   }
-  if (!fmtid || typeof fmtid !== "string") {
-    res.status(400).json({ error: "Missing required query param: fmtid" });
+  if (!quality || typeof quality !== "string") {
+    res.status(400).json({ error: "Missing required query param: quality" });
     return;
   }
 
-  const proc = spawn(YT_DLP, [
-    "-f",
-    fmtid,
-    "-o",
-    "-",
-    "--no-playlist",
-    youtubeUrl(id),
-  ]);
+  const height = parseInt(quality.replace("p", ""), 10);
+  if (isNaN(height) || height <= 0) {
+    res.status(400).json({ error: `Invalid quality value: ${quality}` });
+    return;
+  }
 
-  res.setHeader("Content-Type", "application/octet-stream");
-  res.setHeader(
-    "Content-Disposition",
-    `inline; filename="${id}_${fmtid}"`,
+  const formatStr = `bestvideo[height=${height}][ext=mp4]/bestvideo[ext=mp4]`;
+
+  streamProc(
+    ["-f", formatStr, "-o", "-", "--no-playlist", youtubeUrl(id)],
+    req,
+    res,
+    "video/mp4",
+    `${id}_${quality}.mp4`,
   );
+});
 
-  proc.stdout.pipe(res);
+/**
+ * GET /api/audio?id=<video_id>
+ *
+ * Streams the best available audio track inline.
+ */
+router.get("/audio", (req: Request, res: Response) => {
+  const { id } = req.query;
 
-  proc.stderr.on("data", (chunk: Buffer) => {
-    req.log.warn({ stderr: chunk.toString().trim() }, "yt-dlp stream stderr");
-  });
+  if (!id || typeof id !== "string") {
+    res.status(400).json({ error: "Missing required query param: id" });
+    return;
+  }
 
-  proc.on("error", (err) => {
-    req.log.error({ err }, "yt-dlp stream process error");
-    if (!res.headersSent) {
-      res.status(500).json({ error: "Stream process failed" });
-    } else {
-      res.destroy();
-    }
-  });
-
-  proc.on("close", (code) => {
-    if (code !== 0) {
-      req.log.error({ code }, "yt-dlp stream exited non-zero");
-    }
-  });
-
-  req.on("close", () => {
-    proc.kill("SIGTERM");
-  });
+  streamProc(
+    ["-f", "bestaudio[ext=m4a]/bestaudio", "-o", "-", "--no-playlist", youtubeUrl(id)],
+    req,
+    res,
+    "audio/mp4",
+    `${id}_audio.m4a`,
+  );
 });
 
 export default router;
