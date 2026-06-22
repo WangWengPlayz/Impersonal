@@ -238,7 +238,12 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Audio merged into every MP4 via ffmpeg
 - Download lock map prevents duplicate processes
 
-### 2026-06-22 — Dashboard + stats (current)
+### 2026-06-22 — pnpm build fix + endpoint table (current)
+- Fixed `[ERR_PNPM_IGNORED_BUILDS]` by merging `esbuild`, `esbuild-plugin-pino`, `thread-stream` into `onlyBuiltDependencies` in `pnpm-workspace.yaml` — esbuild postinstall script was blocked by pnpm's security policy
+- Replaced endpoint cards on dashboard with a full reference table: method, path, required params, description, live Try link
+- Table is responsive (collapses on mobile)
+
+### 2026-06-22 — Dashboard + stats
 - `GET /` — live HTML dashboard: user timezone clock, uptime, req/s, memory, load, env, API links
 - `GET /api/stats` — JSON metrics endpoint (uptime, req/s 10 s window, heap/RSS, load avg, CPUs)
 - `src/lib/stats.ts` — singleton request counter with 60 s sliding window; `recordRequest()` + `getStats()`

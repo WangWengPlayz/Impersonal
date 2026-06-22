@@ -154,6 +154,34 @@ const HTML = `<!DOCTYPE html>
     0%,100% { box-shadow: 0 0 0 2px #3fb95030; }
     50%      { box-shadow: 0 0 0 5px #3fb95010; }
   }
+  .ep-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; font-size: 0.82rem;
+  }
+  .ep-table th {
+    background: #1c2128; color: var(--muted);
+    font-size: 0.68rem; font-weight: 600; letter-spacing: .07em;
+    text-transform: uppercase; padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .ep-table td { padding: 11px 14px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+  .ep-table tbody tr:last-child td { border-bottom: none; }
+  .ep-table tbody tr:hover { background: #1c2128; }
+  .ep-path { font-family: monospace; font-size: 0.85rem; color: var(--text); font-weight: 600; white-space: nowrap; }
+  .ep-params { white-space: nowrap; }
+  .ep-desc { color: var(--muted); }
+  .ep-desc code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 0.78rem; color: var(--text); }
+  .ep-try { color: var(--accent); text-decoration: none; font-size: 0.75rem; white-space: nowrap; }
+  .ep-try:hover { text-decoration: underline; }
+  .param { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin: 1px; }
+  .param.req { background: #58a6ff20; color: var(--accent); border: 1px solid #58a6ff40; }
+
+  @media (max-width: 700px) {
+    .ep-table thead { display: none; }
+    .ep-table td { display: block; padding: 6px 14px; border: none; }
+    .ep-table tr { border-bottom: 1px solid var(--border); display: block; padding: 8px 0; }
+  }
   @media (max-width: 500px) {
     .card-wide { grid-column: span 1; }
     .clock-time { font-size: 2rem; }
@@ -225,36 +253,66 @@ const HTML = `<!DOCTYPE html>
 </div>
 
 <div class="section-title">API Endpoints</div>
-<div class="api-grid">
-  <div class="api-card">
-    <div class="api-method">GET</div>
-    <div class="api-path">/api/healthz</div>
-    <div class="api-desc">Health check — returns <code>{"status":"ok"}</code></div>
-    <a class="api-link" href="/api/healthz" target="_blank">Try it →</a>
-  </div>
-  <div class="api-card">
-    <div class="api-method">GET</div>
-    <div class="api-path">/api/stats</div>
-    <div class="api-desc">Live server metrics — uptime, req/s, memory, load</div>
-    <a class="api-link" href="/api/stats" target="_blank">Try it →</a>
-  </div>
-  <div class="api-card">
-    <div class="api-method">GET</div>
-    <div class="api-path">/api/info?url=</div>
-    <div class="api-desc">Extract video metadata, qualities, thumbnail, audio URL</div>
-    <a class="api-link" href="/api/info?url=https://youtu.be/vBynw9Isr28" target="_blank">Try example →</a>
-  </div>
-  <div class="api-card">
-    <div class="api-method">GET</div>
-    <div class="api-path">/api/video?id=&amp;quality=</div>
-    <div class="api-desc">Stream muxed MP4 (video + audio), supports HTTP Range</div>
-    <a class="api-link" href="/api/video?id=vBynw9Isr28&quality=360p" target="_blank">Try example →</a>
-  </div>
-  <div class="api-card">
-    <div class="api-method">GET</div>
-    <div class="api-path">/api/audio?id=</div>
-    <div class="api-desc">Stream best audio track (M4A), supports HTTP Range</div>
-    <a class="api-link" href="/api/audio?id=vBynw9Isr28" target="_blank">Try example →</a>
+<div style="max-width:900px;margin:0 auto;">
+  <table class="ep-table">
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Path</th>
+        <th>Parameters</th>
+        <th>Description</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="api-method">GET</span></td>
+        <td class="ep-path">/</td>
+        <td class="ep-params">—</td>
+        <td class="ep-desc">This dashboard — live metrics &amp; endpoint reference</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="api-method">GET</span></td>
+        <td class="ep-path">/api/healthz</td>
+        <td class="ep-params">—</td>
+        <td class="ep-desc">Health check → <code>{"status":"ok"}</code></td>
+        <td><a class="ep-try" href="/api/healthz" target="_blank">Try →</a></td>
+      </tr>
+      <tr>
+        <td><span class="api-method">GET</span></td>
+        <td class="ep-path">/api/stats</td>
+        <td class="ep-params">—</td>
+        <td class="ep-desc">Live server metrics: uptime, req/s, memory, load avg, Node version</td>
+        <td><a class="ep-try" href="/api/stats" target="_blank">Try →</a></td>
+      </tr>
+      <tr>
+        <td><span class="api-method">GET</span></td>
+        <td class="ep-path">/api/info</td>
+        <td class="ep-params"><span class="param req">url</span></td>
+        <td class="ep-desc">Extract title, thumbnail, all quality levels (MP4), and best audio URL from a YouTube link</td>
+        <td><a class="ep-try" href="/api/info?url=https://youtu.be/vBynw9Isr28" target="_blank">Try →</a></td>
+      </tr>
+      <tr>
+        <td><span class="api-method">GET</span></td>
+        <td class="ep-path">/api/video</td>
+        <td class="ep-params"><span class="param req">id</span> <span class="param req">quality</span></td>
+        <td class="ep-desc">Download &amp; stream muxed MP4 (video + audio via ffmpeg). Supports <code>Range</code> / 206 for seeking. Cached in <code>/tmp/ytcache/</code></td>
+        <td><a class="ep-try" href="/api/video?id=vBynw9Isr28&quality=360p" target="_blank">Try →</a></td>
+      </tr>
+      <tr>
+        <td><span class="api-method">GET</span></td>
+        <td class="ep-path">/api/audio</td>
+        <td class="ep-params"><span class="param req">id</span></td>
+        <td class="ep-desc">Download &amp; stream best audio (M4A). Supports <code>Range</code> / 206 for seeking. Cached in <code>/tmp/ytcache/</code></td>
+        <td><a class="ep-try" href="/api/audio?id=vBynw9Isr28" target="_blank">Try →</a></td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:10px;font-size:0.72rem;color:var(--muted)">
+    <span class="param req" style="font-size:0.68rem">param</span> = required &nbsp;·&nbsp;
+    All JSON responses: <code>{"status":N,"success":bool,"message":"...","data":{...}}</code> &nbsp;·&nbsp;
+    Stream endpoints return binary on success, JSON envelope on error
   </div>
 </div>
 
