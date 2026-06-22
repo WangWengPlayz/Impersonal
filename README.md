@@ -25,9 +25,50 @@ Add these in the **Environment** tab:
 | Key | Value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `DATABASE_URL` | *(your Postgres connection string)* |
+| `YT_COOKIES_BASE64` | *(see Step 3a below — required to bypass YouTube bot detection)* |
 
 > `PORT` is injected automatically by Render — do **not** set it manually.
+
+---
+
+## Step 3a — Export Your YouTube Cookies (required)
+
+YouTube blocks yt-dlp on server IPs unless it looks like a logged-in user. You need to export your browser cookies once and paste them as an env var.
+
+### 1. Install a browser extension
+
+- **Chrome / Edge**: [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+- **Firefox**: [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
+
+### 2. Export cookies for youtube.com
+
+1. Log in to [youtube.com](https://youtube.com) in your browser
+2. Click the extension icon
+3. Select **youtube.com** → export as `cookies.txt` (Netscape format)
+
+### 3. Base64-encode the file
+
+**Mac / Linux terminal:**
+```bash
+base64 -i cookies.txt | tr -d '\n'
+```
+
+**Windows PowerShell:**
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("cookies.txt"))
+```
+
+### 4. Add to Render
+
+In your Render service → **Environment** tab → add:
+
+| Key | Value |
+|---|---|
+| `YT_COOKIES_BASE64` | *(paste the entire base64 string)* |
+
+Click **Save Changes** — Render will restart your service automatically.
+
+> Cookies expire every few weeks. Repeat Steps 2–4 if you start seeing bot errors again.
 
 ---
 

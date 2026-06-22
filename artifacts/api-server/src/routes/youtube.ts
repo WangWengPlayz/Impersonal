@@ -9,6 +9,7 @@ const router: IRouter = Router();
 
 const YT_DLP = process.env["YT_DLP_PATH"] || "yt-dlp";
 const CACHE_DIR = process.env["CACHE_DIR"] || "/tmp/ytcache";
+const COOKIES_FILE = process.env["YT_COOKIES_FILE"] || "/tmp/yt-cookies.txt";
 const CACHE_TTL_MS =
   parseInt(process.env["CACHE_TTL_MINUTES"] || "30", 10) * 60_000;
 const CLEANUP_INTERVAL_MS =
@@ -25,6 +26,25 @@ try {
 } catch (err) {
   process.stderr.write(`Failed to create cache dir: ${String(err)}\n`);
 }
+
+// ─── Cookie setup ─────────────────────────────────────────────────────────────
+// If YT_COOKIES_BASE64 env var is set, decode it and write to COOKIES_FILE so
+// yt-dlp can authenticate as a logged-in user (bypasses YouTube bot detection).
+
+(function setupCookies() {
+  const b64 = process.env["YT_COOKIES_BASE64"];
+  if (!b64) return;
+  try {
+    fs.writeFileSync(
+      COOKIES_FILE,
+      Buffer.from(b64, "base64").toString("utf8"),
+      "utf8",
+    );
+    process.stderr.write(`[yt-dlp] Cookies loaded from YT_COOKIES_BASE64 → ${COOKIES_FILE}\n`);
+  } catch (err) {
+    process.stderr.write(`[yt-dlp] Failed to write cookies file: ${String(err)}\n`);
+  }
+})();
 
 // ─── Semaphore — limits concurrent yt-dlp download processes ─────────────────
 
@@ -162,14 +182,24 @@ function apiError(res: Response, message: string, status: number): void {
 // ─── yt-dlp helpers ───────────────────────────────────────────────────────────
 
 /**
- * Base args prepended to every yt-dlp invocation.
- * --js-runtimes node — required on servers (Render, etc.) where Deno is not
- * installed; Node.js is always available since we run on a Node runtime.
+ * Build base args for every yt-dlp invocation:
+ * - --js-runtimes node  → required on servers without Deno
+ * - --cookies FILE      → added only when the cookies file is present, so
+ *                         yt-dlp authenticates as a logged-in user and avoids
+ *                         YouTube's bot-detection block
  */
-const YT_DLP_BASE_ARGS = ["--js-runtimes", "node"];
+function buildBaseArgs(): string[] {
+  const args = ["--js-runtimes", "node"];
+  try {
+    if (fs.existsSync(COOKIES_FILE) && fs.statSync(COOKIES_FILE).size > 0) {
+      args.push("--cookies", COOKIES_FILE);
+    }
+  } catch { /* ignore — cookies are optional */ }
+  return args;
+}
 
 function spawnYtDlp(args: string[]): ChildProcessWithoutNullStreams {
-  return trackProc(spawn(YT_DLP, [...YT_DLP_BASE_ARGS, ...args]));
+  return trackProc(spawn(YT_DLP, [...buildBaseArgs(), ...args]));
 }
 
 /** Title fetches are also locked per ID to avoid redundant concurrent calls */

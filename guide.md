@@ -238,7 +238,11 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Audio merged into every MP4 via ffmpeg
 - Download lock map prevents duplicate processes
 
-### 2026-06-22 — yt-dlp JS runtime fix (current)
+### 2026-06-22 — YouTube cookie authentication (current)
+- Added `YT_COOKIES_BASE64` env var support: on startup the server decodes it and writes `/tmp/yt-cookies.txt`; `spawnYtDlp()` automatically adds `--cookies /tmp/yt-cookies.txt` when the file exists — required to bypass YouTube's bot detection on server/datacenter IPs
+- Cookies are optional at the code level (file checked at call time); server starts fine without them
+
+### 2026-06-22 — yt-dlp JS runtime fix
 - Added `--js-runtimes node` to every yt-dlp spawn call via a `spawnYtDlp()` helper — Render (and any server without Deno) throws `No supported JavaScript runtime could be found` without this flag; Node.js is always present since we run on a Node runtime
 
 ### 2026-06-22 — pnpm build fix + endpoint table

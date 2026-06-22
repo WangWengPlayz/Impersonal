@@ -1,0 +1,100 @@
+2026-06-22T17:23:52.862468868Z   Using cached yt_dlp-2026.6.9-py3-none-any.whl.metadata (183 kB)
+2026-06-22T17:23:52.882219041Z Using cached yt_dlp-2026.6.9-py3-none-any.whl (3.2 MB)
+2026-06-22T17:23:52.908297806Z Installing collected packages: yt-dlp
+2026-06-22T17:23:55.315781968Z Successfully installed yt-dlp-2026.6.9
+2026-06-22T17:23:55.320073207Z 
+2026-06-22T17:23:55.320094459Z [notice] A new release of pip is available: 25.3 -> 26.1.2
+2026-06-22T17:23:55.320099629Z [notice] To update, run: pip install --upgrade pip
+2026-06-22T17:23:56.596219179Z 
+2026-06-22T17:23:56.596246042Z added 1 package in 1s
+2026-06-22T17:23:56.596260333Z 
+2026-06-22T17:23:56.596370673Z 1 package is looking for funding
+2026-06-22T17:23:56.596448641Z   run `npm fund` for details
+2026-06-22T17:23:57.979192704Z 
+2026-06-22T17:23:57.979224557Z > @workspace/api-server@0.0.0 build /opt/render/project/src/artifacts/api-server
+2026-06-22T17:23:57.979230268Z > node ./build.mjs
+2026-06-22T17:23:57.979234218Z 
+2026-06-22T17:23:58.222070785Z 
+2026-06-22T17:23:58.222094717Z   dist/index.mjs                       1.4mb ⚠️
+2026-06-22T17:23:58.222099948Z   dist/pino-worker.mjs               153.4kb
+2026-06-22T17:23:58.222103938Z   dist/pino-file.mjs                 142.1kb
+2026-06-22T17:23:58.222108279Z   dist/pino-pretty.mjs               114.6kb
+2026-06-22T17:23:58.222112139Z   dist/thread-stream-worker.mjs        7.3kb
+2026-06-22T17:23:58.222116059Z   dist/index.mjs.map                   2.2mb
+2026-06-22T17:23:58.22211984Z   dist/pino-worker.mjs.map           256.9kb
+2026-06-22T17:23:58.22212369Z   dist/pino-file.mjs.map             229.0kb
+2026-06-22T17:23:58.2221276Z   dist/pino-pretty.mjs.map           204.0kb
+2026-06-22T17:23:58.222131441Z   dist/thread-stream-worker.mjs.map   12.0kb
+2026-06-22T17:23:58.222135211Z 
+2026-06-22T17:23:58.222139831Z ⚡ Done in 188ms
+2026-06-22T17:23:59.585561453Z ==> Uploading build...
+2026-06-22T17:24:13.048689126Z ==> Uploaded in 4.3s. Compression took 9.2s
+2026-06-22T17:24:13.173866178Z ==> Build successful 🎉
+2026-06-22T17:24:17.91408542Z ==> Deploying...
+2026-06-22T17:24:18.017460458Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-22T17:24:51.237805217Z ==> Running 'node --enable-source-maps artifacts/api-server/dist/index.mjs'
+2026-06-22T17:24:52.230483988Z {"level":30,"time":1782149092229,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","port":10000,"env":"production","msg":"Server listening"}
+2026-06-22T17:24:52.623183129Z {"level":30,"time":1782149092622,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":1,"method":"HEAD","url":"/"},"res":{"statusCode":200},"responseTime":7,"msg":"request completed"}
+2026-06-22T17:24:59.370626586Z ==> Your service is live 🎉
+2026-06-22T17:24:59.455213086Z {"level":30,"time":1782149099454,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":2,"method":"GET","url":"/"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:24:59.503757011Z ==> 
+2026-06-22T17:24:59.506546388Z ==> ///////////////////////////////////////////////////////////
+2026-06-22T17:24:59.509276335Z ==> 
+2026-06-22T17:24:59.512295129Z ==> Available at your primary URL https://impersonal.onrender.com
+2026-06-22T17:24:59.515434385Z ==> 
+2026-06-22T17:24:59.518138751Z ==> ///////////////////////////////////////////////////////////
+2026-06-22T17:25:09.313902902Z {"level":30,"time":1782149109313,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":3,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+2026-06-22T17:25:10.289588688Z {"level":30,"time":1782149110289,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":4,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+2026-06-22T17:25:10.992090587Z {"level":30,"time":1782149110991,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":5,"method":"GET","url":"/"},"res":{"statusCode":304},"responseTime":3,"msg":"request completed"}
+2026-06-22T17:25:11.274501813Z {"level":30,"time":1782149111274,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":6,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:12.293475622Z {"level":30,"time":1782149112292,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":7,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:13.474861291Z {"level":30,"time":1782149113474,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":8,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:14.548768758Z {"level":30,"time":1782149114545,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":9,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:16.035560375Z {"level":30,"time":1782149116029,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":11,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":61,"msg":"request completed"}
+2026-06-22T17:25:16.328813557Z {"level":30,"time":1782149116328,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":12,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":22,"msg":"request completed"}
+2026-06-22T17:25:17.528274376Z {"level":30,"time":1782149117528,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":13,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":32,"msg":"request completed"}
+2026-06-22T17:25:18.52720452Z {"level":30,"time":1782149118526,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":14,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":73,"msg":"request completed"}
+2026-06-22T17:25:19.460850201Z {"level":30,"time":1782149119459,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":15,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:20.528346712Z {"level":30,"time":1782149120528,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":16,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:21.531192525Z {"level":30,"time":1782149121529,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":17,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":89,"msg":"request completed"}
+2026-06-22T17:25:22.527282884Z {"level":30,"time":1782149122527,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":18,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":68,"msg":"request completed"}
+2026-06-22T17:25:23.527291593Z {"level":30,"time":1782149123527,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":19,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":58,"msg":"request completed"}
+2026-06-22T17:25:24.527661439Z {"level":30,"time":1782149124527,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":20,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":64,"msg":"request completed"}
+2026-06-22T17:25:25.531030464Z {"level":30,"time":1782149125530,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":21,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":78,"msg":"request completed"}
+2026-06-22T17:25:26.529250232Z {"level":30,"time":1782149126529,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":22,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":60,"msg":"request completed"}
+2026-06-22T17:25:27.463922816Z {"level":30,"time":1782149127463,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":23,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:28.468745584Z {"level":30,"time":1782149128467,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":24,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:28.729399826Z {"level":30,"time":1782149128729,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":10,"method":"GET","url":"/api/info"},"res":{"statusCode":null},"responseTime":13945,"msg":"request aborted"}
+2026-06-22T17:25:29.529787019Z {"level":30,"time":1782149129528,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":26,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:30.132741357Z {"level":50,"time":1782149130132,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":10,"method":"GET","url":"/api/info"},"url":"https://youtu.be/vBynw9Isr28","errOutput":"WARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] vBynw9Isr28: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouT","msg":"yt-dlp info failed"}
+2026-06-22T17:25:30.530850992Z {"level":30,"time":1782149130528,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":27,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":62,"msg":"request completed"}
+2026-06-22T17:25:31.526950022Z {"level":30,"time":1782149131474,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":28,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:32.527106534Z {"level":30,"time":1782149132482,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":29,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:33.478799735Z {"level":30,"time":1782149133478,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":30,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:34.482500727Z {"level":30,"time":1782149134482,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":31,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:34.730987082Z {"level":50,"time":1782149134730,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":25,"method":"GET","url":"/api/info"},"url":"https://youtu.be/vBynw9Isr28","errOutput":"WARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] vBynw9Isr28: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouT","msg":"yt-dlp info failed"}
+2026-06-22T17:25:35.430065324Z {"level":30,"time":1782149134731,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":25,"method":"GET","url":"/api/info"},"res":{"statusCode":502},"err":{"type":"Error","message":"failed with status code 502","stack":"Error: failed with status code 502\n    at onResFinished (/opt/render/project/src/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/opt/render/project/src/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:521:24)\n    at onFinish (node:_http_outgoing:1031:10)\n    at callback (node:internal/streams/writable:764:21)\n    at afterWrite (node:internal/streams/writable:708:5)\n    at afterWriteTick (node:internal/streams/writable:694:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)"},"responseTime":6001,"msg":"request errored"}
+2026-06-22T17:25:35.530583928Z {"level":30,"time":1782149135528,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":32,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:36.298513224Z {"level":30,"time":1782149136298,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":33,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:37.470236114Z {"level":30,"time":1782149137469,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":34,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:38.477639251Z {"level":30,"time":1782149138477,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":35,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+2026-06-22T17:25:39.454496224Z {"level":30,"time":1782149139454,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":36,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:40.453200373Z {"level":30,"time":1782149140448,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":37,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:41.47071047Z {"level":30,"time":1782149141468,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":38,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+2026-06-22T17:25:42.468079169Z {"level":30,"time":1782149142467,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":39,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":0,"msg":"request completed"}
+2026-06-22T17:25:43.460809642Z {"level":30,"time":1782149143460,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":40,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:44.467611516Z {"level":30,"time":1782149144467,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":41,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:45.459394237Z {"level":30,"time":1782149145459,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":42,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:46.452591262Z {"level":30,"time":1782149146452,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":43,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:47.457916552Z {"level":30,"time":1782149147457,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":44,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:48.449037239Z {"level":30,"time":1782149148448,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":45,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:49.462866532Z {"level":30,"time":1782149149460,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":46,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:50.477405681Z {"level":30,"time":1782149150477,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":47,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:51.468187381Z {"level":30,"time":1782149151467,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":48,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":0,"msg":"request completed"}
+2026-06-22T17:25:52.444756507Z {"level":30,"time":1782149152444,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":49,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:53.470088952Z {"level":30,"time":1782149153469,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":50,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":0,"msg":"request completed"}
+2026-06-22T17:25:54.469843734Z {"level":30,"time":1782149154469,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":51,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:55.45385425Z {"level":30,"time":1782149155453,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":52,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:56.468835789Z {"level":30,"time":1782149156468,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":53,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+2026-06-22T17:25:57.447247528Z {"level":30,"time":1782149157447,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":54,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+2026-06-22T17:25:58.581789514Z {"level":30,"time":1782149158579,"pid":70,"hostname":"srv-d8sm8o7lk1mc73d8d9og-hibernate-5cfb994b56-hkh8t","req":{"id":55,"method":"GET","url":"/api/stats"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
