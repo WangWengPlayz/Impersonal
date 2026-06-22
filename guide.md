@@ -311,14 +311,14 @@ Deploy it as a **separate** Web Service from the main api-server — they run on
 ### Step-by-step
 
 1. Render dashboard → **New → Web Service** → connect your GitHub repo
-2. Set **Root Directory** to `artifacts/pot-server`
-3. Render detects Node.js automatically. Fill in:
+2. **Leave Root Directory blank** (deploy from repo root — do NOT set it to `artifacts/pot-server`). npm walks up the directory tree and chokes on pnpm's workspace config files if you set a subdirectory root.
+3. Render detects Node.js automatically. Override the build and start fields:
 
 | Field | Value |
 |---|---|
 | **Runtime** | Node |
-| **Build command** | `npm install --omit=dev` |
-| **Start command** | `node src/server.js` |
+| **Build command** | `cd artifacts/pot-server && npm install --omit=dev` |
+| **Start command** | `node --max-old-space-size=768 artifacts/pot-server/src/server.js` |
 
 4. Under **Environment**, add:
 
