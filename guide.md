@@ -239,7 +239,7 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Download lock map prevents duplicate processes
 
 ### 2026-06-22 — pnpm build fix + endpoint table (current)
-- Fixed `[ERR_PNPM_IGNORED_BUILDS]` by creating `pnpm.yaml` at the repo root with `onlyBuiltDependencies` — pnpm v10 removed the `"pnpm"` field from `package.json` and no longer reads it; `pnpm.yaml` is the canonical location for all pnpm settings in v10+
+- Fixed `[ERR_PNPM_IGNORED_BUILDS]`: `pnpm.yaml` is correct but `--frozen-lockfile` makes pnpm use only the lockfile's settings (which have no `onlyBuiltDependencies`), bypassing `pnpm.yaml` entirely. Fix: drop `--frozen-lockfile` and pin `pnpm@10.26.1` (exact version known to work) — pnpm then reads `pnpm.yaml` and allows esbuild to run its install script
 - Replaced endpoint cards on dashboard with a full reference table: method, path, required params, description, live Try link
 - Table is responsive (collapses on mobile)
 

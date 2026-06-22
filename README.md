@@ -13,7 +13,7 @@
 | Field | Value |
 |---|---|
 | **Runtime** | `Node` |
-| **Build Command** | `pip install -U yt-dlp && npm install -g pnpm@latest && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build` |
+| **Build Command** | `pip install -U yt-dlp && npm install -g pnpm@10.26.1 && pnpm install && pnpm --filter @workspace/api-server run build` |
 | **Start Command** | `node --enable-source-maps artifacts/api-server/dist/index.mjs` |
 
 ---
