@@ -238,7 +238,10 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Audio merged into every MP4 via ffmpeg
 - Download lock map prevents duplicate processes
 
-### 2026-06-22 — pnpm build fix + endpoint table (current)
+### 2026-06-22 — yt-dlp JS runtime fix (current)
+- Added `--js-runtimes node` to every yt-dlp spawn call via a `spawnYtDlp()` helper — Render (and any server without Deno) throws `No supported JavaScript runtime could be found` without this flag; Node.js is always present since we run on a Node runtime
+
+### 2026-06-22 — pnpm build fix + endpoint table
 - Fixed `[ERR_PNPM_IGNORED_BUILDS]`: `pnpm.yaml` is correct but `--frozen-lockfile` makes pnpm use only the lockfile's settings (which have no `onlyBuiltDependencies`), bypassing `pnpm.yaml` entirely. Fix: drop `--frozen-lockfile` and pin `pnpm@10.26.1` (exact version known to work) — pnpm then reads `pnpm.yaml` and allows esbuild to run its install script
 - Replaced endpoint cards on dashboard with a full reference table: method, path, required params, description, live Try link
 - Table is responsive (collapses on mobile)

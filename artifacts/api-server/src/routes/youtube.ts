@@ -161,6 +161,17 @@ function apiError(res: Response, message: string, status: number): void {
 
 // ─── yt-dlp helpers ───────────────────────────────────────────────────────────
 
+/**
+ * Base args prepended to every yt-dlp invocation.
+ * --js-runtimes node — required on servers (Render, etc.) where Deno is not
+ * installed; Node.js is always available since we run on a Node runtime.
+ */
+const YT_DLP_BASE_ARGS = ["--js-runtimes", "node"];
+
+function spawnYtDlp(args: string[]): ChildProcessWithoutNullStreams {
+  return trackProc(spawn(YT_DLP, [...YT_DLP_BASE_ARGS, ...args]));
+}
+
 /** Title fetches are also locked per ID to avoid redundant concurrent calls */
 const titleLocks = new Map<string, Promise<string>>();
 
@@ -180,9 +191,7 @@ async function fetchTitle(id: string): Promise<string> {
 
   const promise = new Promise<string>((resolve) => {
     let out = "";
-    const proc = trackProc(
-      spawn(YT_DLP, ["--print", "title", "--no-playlist", youtubeUrl(id)]),
-    );
+    const proc = spawnYtDlp(["--print", "title", "--no-playlist", youtubeUrl(id)]);
     proc.stdout.on("data", (c: Buffer) => {
       out += c.toString();
     });
@@ -237,16 +246,14 @@ function ensureVideo(id: string, quality: string): Promise<void> {
     await downloadSemaphore.acquire();
     try {
       await new Promise<void>((resolve, reject) => {
-        const proc = trackProc(
-          spawn(YT_DLP, [
-            "-f", formatStr,
-            "--merge-output-format", "mp4",
-            "-o", filePath,
-            "--no-playlist",
-            "--no-warnings",
-            youtubeUrl(id),
-          ]),
-        );
+        const proc = spawnYtDlp([
+          "-f", formatStr,
+          "--merge-output-format", "mp4",
+          "-o", filePath,
+          "--no-playlist",
+          "--no-warnings",
+          youtubeUrl(id),
+        ]);
 
         let stderr = "";
         proc.stderr.on("data", (c: Buffer) => {
@@ -311,15 +318,13 @@ function ensureAudio(id: string): Promise<void> {
     await downloadSemaphore.acquire();
     try {
       await new Promise<void>((resolve, reject) => {
-        const proc = trackProc(
-          spawn(YT_DLP, [
-            "-f", "bestaudio[ext=m4a]/bestaudio",
-            "-o", filePath,
-            "--no-playlist",
-            "--no-warnings",
-            youtubeUrl(id),
-          ]),
-        );
+        const proc = spawnYtDlp([
+          "-f", "bestaudio[ext=m4a]/bestaudio",
+          "-o", filePath,
+          "--no-playlist",
+          "--no-warnings",
+          youtubeUrl(id),
+        ]);
 
         let stderr = "";
         proc.stderr.on("data", (c: Buffer) => {
@@ -462,14 +467,12 @@ router.get("/info", async (req: Request, res: Response) => {
   let raw = "";
   let errOutput = "";
 
-  const proc = trackProc(
-    spawn(YT_DLP, [
-      "--dump-json",
-      "--skip-download",
-      "--no-playlist",
-      url,
-    ]),
-  );
+  const proc = spawnYtDlp([
+    "--dump-json",
+    "--skip-download",
+    "--no-playlist",
+    url,
+  ]);
 
   const ok = await new Promise<boolean>((resolve) => {
     proc.stdout.on("data", (c: Buffer) => {
