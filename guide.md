@@ -203,10 +203,11 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Download lock map prevents duplicate processes
 
 ### 2026-06-22 — Render.com deployment (current)
-- Added `render.yaml` blueprint — one-click deploy with build + start commands
+- Added `render.yaml` blueprint — one-click deploy via New → Blueprint
 - Added `.node-version` — pins Node 24 for Render
-- Build command is fully self-contained: installs `yt-dlp` (pip), `pnpm`, all Node deps, then compiles
-- Start command: `node --enable-source-maps artifacts/api-server/dist/index.mjs`
+- Root `package.json` `build` script is the full self-contained pipeline: `pip install -U yt-dlp` → `npm install -g pnpm@latest` → `pnpm install` → esbuild compile
+- Root `package.json` `start` script: `node --enable-source-maps artifacts/api-server/dist/index.mjs`
+- Both fields **auto-fill** when using Render → New → Web Service (Render reads `package.json` scripts)
 - `guide.md` rule added to `replit.md` user preferences — always keep guide updated
 
 ### 2026-06-22 — Production hardening v4
@@ -231,49 +232,64 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 
 ## Deploying to Render.com
 
-A `render.yaml` blueprint is included at the repo root. You can use it for one-click deploys (Render dashboard → New → Blueprint), or copy the commands below for a manual Web Service setup.
+### Runtime: Node.js (correct — not Python)
 
-### Service type
-**Web Service**
+The app is an Express/Node.js server. **Python is only used during the build step** to install `yt-dlp` as a command-line tool. Render will correctly detect this as a Node.js service — that is expected.
 
-### Build command
-*(installs yt-dlp, pnpm, all Node dependencies, then compiles TypeScript to ESM bundle — fully self-contained, no pre-installed tools required)*
+---
 
-```bash
-pip install -U yt-dlp && npm install -g pnpm@latest && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
+### Method 1 — New Web Service (commands auto-fill)
+
+1. Render dashboard → **New → Web Service** → connect repo
+2. Render detects Node.js and **auto-fills** build and start from `package.json`:
+
+| Field | Auto-filled value |
+|---|---|
+| **Build command** | `npm run build` |
+| **Start command** | `npm start` |
+
+`npm run build` runs the full self-contained pipeline:
+```
+pip install -U yt-dlp  →  npm install -g pnpm@latest  →  pnpm install  →  esbuild compile
 ```
 
-### Start command
+No manual copy-paste needed.
 
-```bash
-node --enable-source-maps artifacts/api-server/dist/index.mjs
-```
+---
 
-### Environment variables (Render dashboard)
+### Method 2 — Blueprint (one-click via render.yaml)
+
+Render dashboard → **New → Blueprint** → connect repo → Render reads `render.yaml` automatically.
+
+---
+
+### Environment variables (set in Render dashboard)
 
 | Key | Value |
 |---|---|
-| `PORT` | Injected automatically by Render — do not set manually |
+| `PORT` | Injected automatically by Render — do **not** set manually |
 | `NODE_ENV` | `production` (already set in `render.yaml`) |
 | `DATABASE_URL` | Your Postgres connection string |
-| `YT_DLP_PATH` | Leave unset — `yt-dlp` is on `PATH` after the build command installs it |
+| `YT_DLP_PATH` | Leave **unset** — `yt-dlp` is on PATH after the build step |
 | `MAX_CONCURRENT_DOWNLOADS` | `2` (conservative for free tier) |
 | `CACHE_TTL_MINUTES` | `20` (shorter on free tier — less disk pressure) |
+
+---
 
 ### Files added for Render
 
 | File | Purpose |
 |---|---|
-| `render.yaml` | Blueprint — defines service, build command, start command, and env vars |
+| `render.yaml` | Blueprint — defines runtime, build command, start command, env vars |
 | `.node-version` | Pins Node 24 so Render uses the correct runtime |
 
 ### Render notes
 
-- **ffmpeg** — pre-installed on Render's standard image. If missing: prepend `apt-get install -y ffmpeg &&` to the build command.
-- **yt-dlp** — installed via `pip install -U yt-dlp` in the build command; no manual setup needed.
-- **Disk** — `/tmp/ytcache/` is ephemeral. First request per video+quality always triggers a fresh download after a restart/cold start.
-- **Free tier sleep** — after inactivity the service sleeps. First request after wake-up is slow (yt-dlp + ffmpeg merge). Consider a cron ping if uptime is required.
-- **Graceful shutdown** — Render sends `SIGTERM` before replacing instances. The server drains active yt-dlp processes and closes cleanly within 15 s.
+- **ffmpeg** — pre-installed on Render's standard image. If missing: prepend `apt-get install -y ffmpeg &&` to the build script in `package.json`.
+- **yt-dlp** — installed via `pip install -U yt-dlp` inside `npm run build`; no manual setup.
+- **Disk** — `/tmp/ytcache/` is ephemeral. First request after a restart triggers a fresh download.
+- **Free tier sleep** — first request after inactivity is slow (yt-dlp + ffmpeg merge). Consider a cron ping for uptime.
+- **Graceful shutdown** — Render sends `SIGTERM`; the server drains yt-dlp processes and closes within 15 s.
 
 ---
 
