@@ -30,14 +30,14 @@ A YouTube video/audio proxy API. Clients submit a YouTube URL and receive clean 
 artifacts/
   api-server/          # Main Express API (the only deployed service)
     src/
-      app.ts           # Express app setup (cors, logging, routes)
-      index.ts         # Entrypoint — reads PORT env var, starts server
+      app.ts           # Express setup: cors, logging, routes, 404, error handler
+      index.ts         # Entrypoint: PORT, graceful shutdown, uncaughtException
       lib/
         logger.ts      # Singleton pino logger
       routes/
         index.ts       # Mounts all sub-routers
         health.ts      # GET /api/healthz
-        youtube.ts     # GET /api/info  /api/video  /api/audio
+        youtube.ts     # GET /api/info  /api/video  /api/audio  + shutdown()
 lib/                   # Shared TypeScript libraries (workspace packages)
 scripts/               # Utility scripts
 guide.md               # ← this file
@@ -45,12 +45,15 @@ guide.md               # ← this file
 
 ### Cache directory
 
-`/tmp/ytcache/` — created at startup. Contains:
-- `<id>_<quality>.mp4` — merged video+audio files
-- `<id>_audio.m4a` — best audio files
-- `<id>.title` — plain-text title cache (prevents redundant yt-dlp calls)
+`/tmp/ytcache/` (overridable via `CACHE_DIR` env var). Contains:
 
-Files in `/tmp/` are cleared on server restart. This is intentional — Render.com and Replit ephemeral storage is fine for caching.
+| File | Description |
+|---|---|
+| `<id>_<quality>.mp4` | Fully muxed video + audio |
+| `<id>_audio.m4a` | Best audio track |
+| `<id>.title` | Plain-text video title (tiny, avoids repeat yt-dlp calls) |
+
+Files are evicted after `CACHE_TTL_MINUTES` (default 30 min) of inactivity. Cleanup runs every `CLEANUP_INTERVAL_MINUTES` (default 10 min). `/tmp/` is ephemeral — clears on server restart.
 
 ---
 
@@ -68,12 +71,12 @@ All JSON responses follow a standard envelope:
 { "status": 400, "success": false, "message": "..." }
 ```
 
+Streaming endpoints (`/api/video`, `/api/audio`) return binary data on success; the envelope is only used for errors.
+
 ---
 
 ### `GET /api/healthz`
-Health check.
 
-**Response:**
 ```json
 { "status": "ok" }
 ```
@@ -81,18 +84,17 @@ Health check.
 ---
 
 ### `GET /api/info?url=<youtube_url>`
-Extracts video metadata. Returns one MP4 entry per resolution (deduplicated, no WebM), a thumbnail URL, and best audio. All stream URLs point back to this server — no YouTube CDN URLs exposed. Also caches the video title to `/tmp/ytcache/<id>.title` to speed up subsequent `/api/video` and `/api/audio` requests.
 
-**Query params:**
-| Param | Required | Description |
+Extracts video metadata. Returns one MP4 per resolution (deduplicated), thumbnail, and best audio. All stream URLs point to this server.
+
+| Param | Required | Notes |
 |---|---|---|
-| `url` | ✅ | Any public YouTube URL (full or short) |
+| `url` | ✅ | Any public YouTube URL (`youtube.com` or `youtu.be`) |
 
-**Success response:**
+**Success:**
 ```json
 {
-  "status": 200,
-  "success": true,
+  "status": 200, "success": true,
   "message": "Video information retrieved successfully.",
   "data": {
     "id": "vBynw9Isr28",
@@ -100,84 +102,64 @@ Extracts video metadata. Returns one MP4 entry per resolution (deduplicated, no 
     "thumbnail": "https://i.ytimg.com/vi/vBynw9Isr28/maxresdefault.jpg",
     "qualities": [
       { "quality": "144p",  "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=144p" },
-      { "quality": "240p",  "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=240p" },
       { "quality": "360p",  "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=360p" },
-      { "quality": "480p",  "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=480p" },
       { "quality": "720p",  "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=720p" },
-      { "quality": "1080p", "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=1080p" },
-      { "quality": "1440p", "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=1440p" },
-      { "quality": "2160p", "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=2160p" }
+      { "quality": "1080p", "url": "https://your-domain/api/video?id=vBynw9Isr28&quality=1080p" }
     ],
-    "audio": {
-      "format": "m4a",
-      "url": "https://your-domain/api/audio?id=vBynw9Isr28"
-    }
+    "audio": { "format": "m4a", "url": "https://your-domain/api/audio?id=vBynw9Isr28" }
   }
 }
 ```
 
-**Error responses:**
-- `400` — missing `url` param
-- `404` — video unavailable or private
-- `502` — yt-dlp failed for another reason
+**Errors:** `400` bad param, `404` video unavailable/private, `502` yt-dlp failure
 
 ---
 
 ### `GET /api/video?id=<video_id>&quality=<height>p`
 
-Downloads (on first request) a fully muxed MP4 — video stream merged with the best available audio via ffmpeg — and caches it to `/tmp/ytcache/<id>_<quality>.mp4`. Subsequent requests are served directly from cache.
+Downloads on first request (video + audio merged via ffmpeg), caches to `/tmp/ytcache/<id>_<quality>.mp4`, then serves. Full `206 Partial Content` support — browsers and HTML5 players can seek freely.
 
-Supports **HTTP Range requests** (`206 Partial Content`) so browsers and HTML5 `<video>` players can seek to any timestamp.
-
-**Query params:**
-| Param | Required | Description |
+| Param | Required | Notes |
 |---|---|---|
-| `id` | ✅ | YouTube video ID (e.g. `vBynw9Isr28`) |
-| `quality` | ✅ | Resolution string (e.g. `720p`, `1080p`) |
+| `id` | ✅ | 11-char YouTube video ID |
+| `quality` | ✅ | e.g. `360p`, `1080p` |
 
 **Response headers (success):**
 ```
-HTTP 200 (full) or 206 (range)
+HTTP 200 / 206
 Content-Type: video/mp4
-Content-Disposition: inline; filename="Lady Gaga - Abracadabra (Official Music Video) [360p].mp4"
+Content-Disposition: inline; filename="Lady Gaga - Abracadabra [360p].mp4"
 Accept-Ranges: bytes
-Content-Range: bytes <start>-<end>/<total>   ← only on 206
+Content-Length: <bytes>
+Content-Range: bytes <start>-<end>/<total>   ← 206 only
+Cache-Control: public, max-age=3600
 ```
 
-**yt-dlp format string used:**
+**yt-dlp format string:**
 ```
 bestvideo[height=N][ext=mp4]+bestaudio[ext=m4a]
 /bestvideo[height=N][ext=mp4]+bestaudio
 /best[height<=N][ext=mp4]
 ```
 
-**Error responses:**
-- `400` — missing or invalid `id` / `quality` param
-- `416` — Range Not Satisfiable
-- `502` — download failed
+**Errors:** `400` bad params, `416` bad Range, `502` download failed
 
 ---
 
 ### `GET /api/audio?id=<video_id>`
 
-Downloads (on first request) the best available audio track (prefers m4a) and caches it to `/tmp/ytcache/<id>_audio.m4a`. Supports HTTP Range requests.
+Same pattern as `/api/video` — downloads, caches, serves with Range support.
 
-**Query params:**
-| Param | Required | Description |
-|---|---|---|
-| `id` | ✅ | YouTube video ID |
+| Param | Required |
+|---|---|
+| `id` | ✅ |
 
-**Response headers (success):**
 ```
-HTTP 200 or 206
 Content-Type: audio/mp4
-Content-Disposition: inline; filename="Lady Gaga - Abracadabra (Official Music Video).m4a"
-Accept-Ranges: bytes
+Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 ```
 
-**Error responses:**
-- `400` — missing `id`
-- `502` — download failed
+**Errors:** `400` bad ID, `502` download failed
 
 ---
 
@@ -185,45 +167,65 @@ Accept-Ranges: bytes
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `PORT` | ✅ | — | Port the Express server listens on |
-| `YT_DLP_PATH` | ❌ | `yt-dlp` (PATH) | Absolute path to the `yt-dlp` binary |
-| `SESSION_SECRET` | ❌ | — | Reserved for future session/auth use |
+| `PORT` | ✅ | — | Express listen port |
+| `YT_DLP_PATH` | ❌ | `yt-dlp` | Absolute path to yt-dlp binary |
+| `CACHE_DIR` | ❌ | `/tmp/ytcache` | Where to store downloaded files |
+| `CACHE_TTL_MINUTES` | ❌ | `30` | Minutes before an unaccessed file is deleted |
+| `CLEANUP_INTERVAL_MINUTES` | ❌ | `10` | How often to run cache eviction |
+| `MAX_CONCURRENT_DOWNLOADS` | ❌ | `3` | Max simultaneous yt-dlp download processes |
+| `NODE_ENV` | ❌ | `development` | Set to `production` on Render |
+| `SESSION_SECRET` | ❌ | — | Reserved for future auth use |
 
 ---
 
 ## Changelog
 
 ### 2026-06-22 — Initial build
-- Bootstrapped Express 5 API server in `artifacts/api-server`
+- Bootstrapped Express 5 API server
 - Added `GET /api/healthz`
 
-### 2026-06-22 — YouTube proxy API (v1)
-- Added `GET /api/info` — dumps all video/audio formats via `yt-dlp --dump-json`
-- Added `GET /api/stream` — streams any format by raw `fmtid` (internal YouTube format ID)
-- `yt-dlp` installed via pip: `pip install -U yt-dlp`
+### 2026-06-22 — YouTube proxy API v1
+- `GET /api/info` — full format dump via `yt-dlp --dump-json`
+- `GET /api/stream` — stream by raw `fmtid`
+- `pip install -U yt-dlp`
 
-### 2026-06-22 — YouTube proxy API (v2)
-- **`/api/stream` replaced** by `/api/video?id=&quality=` and `/api/audio?id=`
-- `/api/info` deduplicates qualities (one MP4 per resolution, WebM removed)
-- Format selection uses yt-dlp format strings — no YouTube format IDs exposed to clients
-- `YT_DLP_PATH` env var added for portable deployment
+### 2026-06-22 — YouTube proxy API v2
+- `/api/stream` replaced by `/api/video` and `/api/audio`
+- Deduplicated qualities (one MP4/resolution, no WebM)
+- `YT_DLP_PATH` env var added
 
-### 2026-06-22 — YouTube proxy API (v3, current)
-- **Thumbnail** added to `/api/info` response (`https://i.ytimg.com/vi/<id>/maxresdefault.jpg`)
-- **Standard response envelope** `{ status, success, message, data }` on all JSON responses
-- **HTTP Range requests** (206 Partial Content) — full seeking support in HTML5 players. Videos are downloaded to `/tmp/ytcache/` first, then served from disk with range support
-- **Correct filenames** — `Content-Disposition` uses the actual YouTube video title (e.g. `Lady Gaga - Abracadabra (Official Music Video) [360p].mp4`)
-- **Audio merged into every MP4** — `bestvideo+bestaudio --merge-output-format mp4` via ffmpeg; video-only tracks are always combined with audio before serving
-- **Download lock map** — concurrent requests for the same file share one download promise, no duplicate processes
-- **Exit-code resilience** — yt-dlp may exit non-zero due to JS runtime warnings; a non-empty output file is treated as success regardless of exit code
-- **Title cache** — `/tmp/ytcache/<id>.title` avoids repeated `--print title` calls
+### 2026-06-22 — YouTube proxy API v3
+- Thumbnail in `/api/info`
+- Standard `{status,success,message,data}` envelope on all JSON
+- HTTP Range / 206 Partial Content — seeking support
+- Correct Content-Disposition filenames (YouTube title)
+- Audio merged into every MP4 via ffmpeg
+- Download lock map prevents duplicate processes
+
+### 2026-06-22 — Production hardening v4 (current)
+- **Semaphore** — max `MAX_CONCURRENT_DOWNLOADS` (default 3) concurrent yt-dlp processes; additional requests queue
+- **TTL cache eviction** — `lastAccess` tracked per file; cleanup timer deletes stale `.mp4`/`.m4a` files every 10 min
+- **Partial file cleanup** — failed downloads delete their incomplete output file immediately
+- **Graceful shutdown** — `SIGTERM`/`SIGINT` kill active yt-dlp processes, close HTTP server, then exit; 15 s forced-exit safety net
+- **uncaughtException / unhandledRejection** handlers in `index.ts`
+- **Title fetch lock** — concurrent `/api/video` calls for the same ID share one `--print title` process
+- **Video ID validation** — regex `^[a-zA-Z0-9_-]{11}$` rejects garbage before hitting yt-dlp
+- **YouTube URL guard** in `/api/info` — rejects non-YouTube URLs with 400 before spawning yt-dlp
+- **Robust Range parsing** — handles NaN, clamps end to `fileSize-1`, returns 416 on malformed header
+- **File stream error handling** — read stream errors don't crash the process
+- **`Cache-Control: public, max-age=3600`** on served files — CDN and browser caching friendly
+- **404 handler** in `app.ts` — unknown routes return standard envelope
+- **Global Express error handler** — async route errors caught, stack traces never sent to clients
+- **`--no-warnings`** flag on download calls — suppresses JS runtime noise in logs
+- **Proto fix for Render.com** — `x-forwarded-proto: https,http` handled by splitting on `,`
+- **`CACHE_DIR` env var** — cache location configurable for non-tmp deployments
 
 ---
 
 ## Deploying to Render.com
 
 ### Service type
-**Web Service** — Render's free/paid web service tier works fine.
+**Web Service**
 
 ### Build command
 ```bash
@@ -235,42 +237,38 @@ pip install -U yt-dlp && npm install -g pnpm@10 && pnpm install --frozen-lockfil
 node artifacts/api-server/dist/index.mjs
 ```
 
-### Environment variables to set in Render dashboard
+### Environment variables (Render dashboard)
+
 | Key | Value |
 |---|---|
-| `PORT` | `10000` (Render injects this automatically for web services) |
-| `YT_DLP_PATH` | `/opt/render/.local/bin/yt-dlp` *(verify with `which yt-dlp` in a Render shell after first deploy)* |
+| `PORT` | Injected automatically by Render — do not set manually |
 | `NODE_ENV` | `production` |
+| `YT_DLP_PATH` | Verify with `which yt-dlp` in a Render shell after first deploy |
+| `MAX_CONCURRENT_DOWNLOADS` | `2` (conservative for free tier) |
+| `CACHE_TTL_MINUTES` | `20` (shorter on free tier — less disk pressure) |
 
-### Notes for Render
-- `ffmpeg` must be available on the Render instance. It is pre-installed on Render's standard Docker images. If missing, add `apt-get install -y ffmpeg` to the build command.
-- `/tmp/ytcache/` is ephemeral — it is recreated on every server restart (Render cold starts). Cached files are lost between deploys; the first request per video+quality will trigger a fresh download.
-- Render's free tier **sleeps after inactivity** — first request after wake-up will be slow while yt-dlp downloads and merges the video.
-- Concurrent high-quality video downloads are CPU-intensive. Free tier may time out on 1080p+ merges.
+### Render notes
+
+- **ffmpeg** — pre-installed on Render's standard image. If missing: prepend `apt-get install -y ffmpeg &&` to the build command.
+- **Disk** — `/tmp/ytcache/` is ephemeral. First request per video+quality always triggers a fresh download after a restart/cold start.
+- **Free tier sleep** — after inactivity the dyno sleeps. First request after wake-up is slow (yt-dlp + ffmpeg merge). Consider a cron ping if uptime is required.
+- **Graceful shutdown** — Render sends `SIGTERM` before replacing instances. The server will drain active yt-dlp processes and close cleanly within 15 s.
 
 ---
 
 ## Local Development
 
 ```bash
-# Install Node dependencies
 pnpm install
-
-# Install yt-dlp (requires Python 3)
 pip install -U yt-dlp
 
-# ffmpeg must be installed separately
+# ffmpeg — must be installed separately:
 # macOS:   brew install ffmpeg
 # Ubuntu:  apt-get install -y ffmpeg
 # Replit/Nix: already available
 
-# Start the API server (workflow handles PORT automatically in Replit)
 pnpm --filter @workspace/api-server run dev
-
-# Typecheck
 pnpm --filter @workspace/api-server run typecheck
-
-# Full workspace typecheck
 pnpm run typecheck
 ```
 
@@ -278,11 +276,13 @@ pnpm run typecheck
 
 ## Rules for Future Agents
 
-1. **Update this file** every time you add a route, change a route signature, install a package, or change build/start commands.
-2. **Never expose YouTube CDN URLs** to clients — always proxy through `/api/video` or `/api/audio`.
-3. **Always use the standard response envelope** `{ status, success, message, data }` for all JSON responses. Streaming endpoints (video/audio) use this only for error responses.
-4. **Use `req.log`** for logging inside route handlers, never `console.log`.
-5. **Test with `curl localhost:80/api/...`** — the shared proxy routes through port 80 in Replit.
-6. **Keep Render.com compatibility**: use `process.env.YT_DLP_PATH || "yt-dlp"` so the binary path is configurable.
-7. **Do not remove the download lock map** — it prevents duplicate concurrent yt-dlp processes for the same video.
-8. **Treat non-empty output file as success** even if yt-dlp exits non-zero — the JS runtime warning causes non-zero exits on systems without Deno/Node JS runtime support.
+1. **Update this file** every time you add a route, change a signature, install a package, or change build/start commands.
+2. **Never expose YouTube CDN URLs** — always proxy through `/api/video` or `/api/audio`.
+3. **Use the standard envelope** `{status, success, message, data}` for all JSON. Streaming endpoints only use it for errors.
+4. **Use `req.log`** in route handlers. Never `console.log`.
+5. **Test with `curl localhost:80/api/...`** — the shared Replit proxy routes through port 80.
+6. **Keep Render.com compatibility** — `process.env.YT_DLP_PATH || "yt-dlp"` and `process.env.CACHE_DIR || "/tmp/ytcache"`.
+7. **Never remove the semaphore or download lock map** — they prevent resource exhaustion under concurrent load.
+8. **Treat non-empty output file as success** even if yt-dlp exits non-zero — the JS runtime warning causes spurious non-zero exits.
+9. **Export `shutdown()`** from `youtube.ts` and call it from `index.ts` on `SIGTERM`/`SIGINT`.
+10. **Do not add `console.log` or expose `err.stack`** to API responses — use `req.log.error` and return a generic message.
