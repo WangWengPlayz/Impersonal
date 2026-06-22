@@ -202,7 +202,14 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Audio merged into every MP4 via ffmpeg
 - Download lock map prevents duplicate processes
 
-### 2026-06-22 — Production hardening v4 (current)
+### 2026-06-22 — Render.com deployment (current)
+- Added `render.yaml` blueprint — one-click deploy with build + start commands
+- Added `.node-version` — pins Node 24 for Render
+- Build command is fully self-contained: installs `yt-dlp` (pip), `pnpm`, all Node deps, then compiles
+- Start command: `node --enable-source-maps artifacts/api-server/dist/index.mjs`
+- `guide.md` rule added to `replit.md` user preferences — always keep guide updated
+
+### 2026-06-22 — Production hardening v4
 - **Semaphore** — max `MAX_CONCURRENT_DOWNLOADS` (default 3) concurrent yt-dlp processes; additional requests queue
 - **TTL cache eviction** — `lastAccess` tracked per file; cleanup timer deletes stale `.mp4`/`.m4a` files every 10 min
 - **Partial file cleanup** — failed downloads delete their incomplete output file immediately
@@ -224,17 +231,22 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 
 ## Deploying to Render.com
 
+A `render.yaml` blueprint is included at the repo root. You can use it for one-click deploys (Render dashboard → New → Blueprint), or copy the commands below for a manual Web Service setup.
+
 ### Service type
 **Web Service**
 
 ### Build command
+*(installs yt-dlp, pnpm, all Node dependencies, then compiles TypeScript to ESM bundle — fully self-contained, no pre-installed tools required)*
+
 ```bash
-pip install -U yt-dlp && npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
+pip install -U yt-dlp && npm install -g pnpm@latest && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
 ```
 
 ### Start command
+
 ```bash
-node artifacts/api-server/dist/index.mjs
+node --enable-source-maps artifacts/api-server/dist/index.mjs
 ```
 
 ### Environment variables (Render dashboard)
@@ -242,17 +254,26 @@ node artifacts/api-server/dist/index.mjs
 | Key | Value |
 |---|---|
 | `PORT` | Injected automatically by Render — do not set manually |
-| `NODE_ENV` | `production` |
-| `YT_DLP_PATH` | Verify with `which yt-dlp` in a Render shell after first deploy |
+| `NODE_ENV` | `production` (already set in `render.yaml`) |
+| `DATABASE_URL` | Your Postgres connection string |
+| `YT_DLP_PATH` | Leave unset — `yt-dlp` is on `PATH` after the build command installs it |
 | `MAX_CONCURRENT_DOWNLOADS` | `2` (conservative for free tier) |
 | `CACHE_TTL_MINUTES` | `20` (shorter on free tier — less disk pressure) |
+
+### Files added for Render
+
+| File | Purpose |
+|---|---|
+| `render.yaml` | Blueprint — defines service, build command, start command, and env vars |
+| `.node-version` | Pins Node 24 so Render uses the correct runtime |
 
 ### Render notes
 
 - **ffmpeg** — pre-installed on Render's standard image. If missing: prepend `apt-get install -y ffmpeg &&` to the build command.
+- **yt-dlp** — installed via `pip install -U yt-dlp` in the build command; no manual setup needed.
 - **Disk** — `/tmp/ytcache/` is ephemeral. First request per video+quality always triggers a fresh download after a restart/cold start.
-- **Free tier sleep** — after inactivity the dyno sleeps. First request after wake-up is slow (yt-dlp + ffmpeg merge). Consider a cron ping if uptime is required.
-- **Graceful shutdown** — Render sends `SIGTERM` before replacing instances. The server will drain active yt-dlp processes and close cleanly within 15 s.
+- **Free tier sleep** — after inactivity the service sleeps. First request after wake-up is slow (yt-dlp + ffmpeg merge). Consider a cron ping if uptime is required.
+- **Graceful shutdown** — Render sends `SIGTERM` before replacing instances. The server drains active yt-dlp processes and closes cleanly within 15 s.
 
 ---
 

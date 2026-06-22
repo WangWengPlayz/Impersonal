@@ -34,7 +34,7 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- **Always update `guide.md`** whenever you add, remove, or modify any route, package, environment variable, file, or build/start/deploy command. `guide.md` is the source of truth for this project.
 
 ## Gotchas
 
