@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - esbuild-plugin-pino
+  - msw
+  - thread-stream
+  - unrs-resolver
