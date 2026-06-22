@@ -239,7 +239,7 @@ Content-Disposition: inline; filename="Lady Gaga - Abracadabra.m4a"
 - Download lock map prevents duplicate processes
 
 ### 2026-06-22 — pnpm build fix + endpoint table (current)
-- Fixed `[ERR_PNPM_IGNORED_BUILDS]` by merging `esbuild`, `esbuild-plugin-pino`, `thread-stream` into `onlyBuiltDependencies` in `pnpm-workspace.yaml` — esbuild postinstall script was blocked by pnpm's security policy
+- Fixed `[ERR_PNPM_IGNORED_BUILDS]` by adding `pnpm.onlyBuiltDependencies` to root `package.json` (covers `esbuild`, `esbuild-plugin-pino`, `thread-stream`, `@swc/core`, `msw`, `unrs-resolver`) — `pnpm-workspace.yaml` alone is not reliably read by all pnpm versions (e.g. Render.com); `package.json` is the canonical location
 - Replaced endpoint cards on dashboard with a full reference table: method, path, required params, description, live Try link
 - Table is responsive (collapses on mobile)
 
