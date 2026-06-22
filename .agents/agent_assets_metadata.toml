@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "s-PW4eexzcYIZim-ZRJvD"
+uri = "file://README.md"
+type = "text"
+title = "Render.com Deployment Guide"
