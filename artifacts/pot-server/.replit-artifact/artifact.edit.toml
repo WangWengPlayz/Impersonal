@@ -1,0 +1,24 @@
+kind = "api"
+previewPath = "/pot/"
+title = "POT Server"
+version = "1.0.0"
+id = "pot_server_v1_abc123xyz"
+
+[[services]]
+localPort = 8081
+name = "POT Server"
+paths = ["/pot/"]
+
+[services.development]
+run = "pnpm --filter @workspace/pot-server run dev"
+
+[services.production]
+
+[services.production.run]
+args = ["node", "artifacts/pot-server/src/server.js"]
+
+[services.production.run.env]
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/health"
